@@ -9,7 +9,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
     
-    <!-- আপনার দেওয়া অ্যাড স্ক্রিপ্ট এখানে যুক্ত করা হয়েছে -->
     <script src='//libtl.com/sdk.js' data-zone='10207269' data-sdk='show_10207269'></script>
 
     <style>
@@ -19,20 +18,18 @@
             --background-light: #FDFEFE; --surface-light: #FFFFFF; --text-primary-light: #2C3E50; --text-secondary-light: #808B96; --border-light: #EAEDED;
             --background-dark: #1B2631; --surface-dark: #283747; --text-primary-dark: #FDFEFE; --text-secondary-dark: #ABB2B9; --border-dark: #566573;
             --success: #27AE60; --danger: #C0392B; --pending: #F39C12;
+            --chat-user-bg: #E74C3C; --chat-admin-bg: #EAECEE;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: var(--font-family); transition: background-color 0.3s, color 0.3s; -webkit-font-smoothing: antialiased; }
-        body.light-theme { background-color: var(--background-light); color: var(--text-primary-light); }
-        body.dark-theme { background-color: var(--background-dark); color: var(--text-primary-dark); }
-        #app { max-width: 500px; margin: 0 auto; padding-bottom: 80px; }
-        .page { display: none; padding: 15px; }
+        body.light-theme { background-color: var(--background-light); color: var(--text-primary-light); --chat-bubble-text: #fff; --chat-admin-text: #333; }
+        body.dark-theme { background-color: var(--background-dark); color: var(--text-primary-dark); --chat-admin-bg: #34495E; --chat-bubble-text: #fff; --chat-admin-text: #fff; }
+        #app { max-width: 500px; margin: 0 auto; padding-bottom: 80px; position: relative; height: 100vh; overflow-y: auto; }
+        .page { display: none; padding: 15px; padding-bottom: 90px; }
         .page.active { display: block; animation: fadeIn 0.4s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         
-        .profile-header {
-            padding: 25px 15px; border-bottom: 1px solid;
-            display: flex; flex-direction: column; align-items: center; text-align: center;
-        }
+        .profile-header { padding: 25px 15px; border-bottom: 1px solid; display: flex; flex-direction: column; align-items: center; text-align: center; }
         .light-theme .profile-header { background-color: var(--surface-light); border-bottom-color: var(--border-light); }
         .dark-theme .profile-header { background-color: var(--surface-dark); border-bottom-color: var(--border-dark); }
         #user-photo { width: 80px; height: 80px; border-radius: 50%; border: 4px solid var(--primary-color); object-fit: cover; margin-bottom: 10px; }
@@ -106,6 +103,18 @@
         .action-btn { padding: 10px 20px; font-size: 0.9rem; font-weight: 600; color: #fff; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; background: linear-gradient(45deg, var(--primary-color), var(--secondary-color)); margin-left: auto; white-space: nowrap; font-family: 'Hind Siliguri', sans-serif;}
         .action-btn:disabled { background: #808B96; cursor: not-allowed; }
         
+        /* CHAT STYLES */
+        .chat-container { display: flex; flex-direction: column; height: 75vh; }
+        .chat-messages { flex-grow: 1; overflow-y: auto; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 10px; }
+        .light-theme .chat-messages { background-color: #f1f2f6; } .dark-theme .chat-messages { background-color: #202c39; }
+        .chat-bubble { max-width: 80%; padding: 10px 15px; border-radius: 15px; font-size: 0.9rem; position: relative; word-wrap: break-word; }
+        .msg-user { align-self: flex-end; background-color: var(--chat-user-bg); color: #fff; border-bottom-right-radius: 2px; }
+        .msg-admin { align-self: flex-start; background-color: var(--chat-admin-bg); color: var(--chat-admin-text); border-bottom-left-radius: 2px; }
+        .chat-input-area { display: flex; gap: 10px; padding: 10px 0; }
+        #chat-input { flex-grow: 1; padding: 12px; border-radius: 25px; border: 1px solid; }
+        .light-theme #chat-input { background: #fff; border-color: #ccc; } .dark-theme #chat-input { background: #283747; border-color: #566573; color: white; }
+        #send-chat-btn { width: 45px; height: 45px; border-radius: 50%; border: none; background: var(--primary-color); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
         .leaderboard-toggle { display: flex; justify-content: space-around; margin-bottom: 15px; }
         .toggle-btn { padding: 10px 20px; border: none; background: none; font-size: 1rem; cursor: pointer; font-family: 'Hind Siliguri', sans-serif;}
         .light-theme .toggle-btn { color: var(--text-secondary-light); } .dark-theme .toggle-btn { color: var(--text-secondary-dark); }
@@ -121,13 +130,16 @@
 <body>
     <div id="app-loader"><div class="spinner"></div><p id="loading-progress">0%</p></div>
     <div id="popup" class="popup-overlay"><div class="popup-content"><div id="popup-body"></div></div></div>
+    
     <div id="app" style="display: none;">
         <header class="profile-header">
             <img id="user-photo" src="https://via.placeholder.com/80" alt="User">
             <h1 id="user-name">Loading...</h1>
             <div id="user-balance-container">মূল ব্যালেন্স: <span id="user-balance">0.00</span> টাকা</div>
         </header>
+
         <main id="main-content">
+            <!-- HOME PAGE -->
             <div id="home-page" class="page active">
                 <div class="stats-grid">
                     <div class="stat-card"><h3>আজকের অ্যাড</h3><p id="daily-ads-watched">0 / 0</p></div>
@@ -141,6 +153,8 @@
                 </div>
                 <div id="dynamic-links-container" style="margin-top: 20px;"></div>
             </div>
+
+            <!-- TASKS PAGE -->
             <div id="tasks-page" class="page">
                 <div class="earning-wallet-card">
                     <h3>আর্নিং ওয়ালেট</h3>
@@ -148,10 +162,37 @@
                     <small>মূল ব্যালেন্সে নিতে সর্বনিম্ন ১০০ টাকা লাগবে।</small>
                     <button id="move-to-balance-btn" class="action-btn" style="width:100%; margin-top: 15px;" disabled>মূল ব্যালেন্সে নিন</button>
                 </div>
+                
+                <!-- Support Buttons Area -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;">
+                    <button class="action-btn" id="open-live-chat-btn" style="background: linear-gradient(45deg, #1abc9c, #16a085); width: 100%;">
+                        <i class="fas fa-comments"></i> লাইভ চ্যাট
+                    </button>
+                    <button class="action-btn" id="open-telegram-btn" style="background: linear-gradient(45deg, #2980b9, #3498db); width: 100%;">
+                        <i class="fab fa-telegram-plane"></i> অ্যাডমিন সাপোর্ট
+                    </button>
+                </div>
+
                 <div id="ad-progress-container" class="progress-container" style="margin-top:20px;"></div>
                 <div id="ad-task-container"></div>
                 <h2>বোনাস টাস্ক</h2><div id="dynamic-tasks-container"></div>
             </div>
+
+            <!-- LIVE CHAT PAGE (Hidden by default) -->
+            <div id="chat-page" class="page">
+                <div class="chat-container">
+                    <div style="text-align: center; margin-bottom: 10px; color: var(--text-secondary-light); font-size: 0.9rem;">অ্যাডমিনের সাথে সরাসরি কথা বলুন</div>
+                    <div id="chat-messages" class="chat-messages">
+                        <!-- Messages will load here -->
+                    </div>
+                    <div class="chat-input-area">
+                        <input type="text" id="chat-input" placeholder="আপনার মেসেজ লিখুন...">
+                        <button id="send-chat-btn"><i class="fas fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LEADERBOARD PAGE -->
             <div id="leaderboard-page" class="page">
                 <h2>লিডারবোর্ড</h2>
                 <div class="leaderboard-toggle">
@@ -161,6 +202,8 @@
                 <div id="referral-board"><ul class="leaderboard-list" id="referral-leaderboard-list"></ul></div>
                 <div id="earning-board" style="display: none;"><ul class="leaderboard-list" id="earning-leaderboard-list"></ul></div>
             </div>
+
+            <!-- PROFILE PAGE -->
             <div id="profile-page" class="page">
                 <div id="referral-section"></div><div id="withdraw-section"></div>
                 <div id="withdrawal-history-section" style="margin-top: 20px;">
@@ -168,6 +211,7 @@
                 </div>
             </div>
         </main>
+
         <nav class="bottom-nav">
             <button class="nav-btn active" data-page="home-page"><i class="fas fa-home"></i><span>হোম</span></button>
             <button class="nav-btn" data-page="tasks-page"><i class="fas fa-tasks"></i><span>টাস্ক</span></button>
@@ -184,18 +228,19 @@
     document.addEventListener('DOMContentLoaded', () => {
         const tg = window.Telegram.WebApp;
         const firebaseConfig = {
-  apiKey: "AIzaSyAQ0tdDDVHU64ZNaw-b9GqgGhDkof0z5dg",
-  authDomain: "cash-hub-88d9a.firebaseapp.com",
-  databaseURL: "https://cash-hub-88d9a-default-rtdb.firebaseio.com",
-  projectId: "cash-hub-88d9a",
-  storageBucket: "cash-hub-88d9a.firebasestorage.app",
-  messagingSenderId: "784815449124",
-  appId: "1:784815449124:web:3507f2f89bd30cd6d864b1"
-};
+          apiKey: "AIzaSyAQ0tdDDVHU64ZNaw-b9GqgGhDkof0z5dg",
+          authDomain: "cash-hub-88d9a.firebaseapp.com",
+          databaseURL: "https://cash-hub-88d9a-default-rtdb.firebaseio.com",
+          projectId: "cash-hub-88d9a",
+          storageBucket: "cash-hub-88d9a.firebasestorage.app",
+          messagingSenderId: "784815449124",
+          appId: "1:784815449124:web:3507f2f89bd30cd6d864b1"
+        };
         
         let appConfig = {}; let userState = {}; let tgUser = {}; let earningWalletBalance = 0;
         let leaderboardData = { referral: [], earning: [] };
         let userTransactions = [];
+        let chatInitialized = false;
 
         const popup = document.getElementById('popup');
         const popupBody = document.getElementById('popup-body');
@@ -206,8 +251,7 @@
         const updateProgress = (percentage) => { loadingProgress.textContent = `${percentage}%`; };
 
         const loadAdSdk = (zoneId) => {
-            // Main ad loader (kept for regular tasks if needed)
-            if (!zoneId) { console.error("Ad Zone ID is missing from Firebase config!"); return; }
+            if (!zoneId) return;
             if (document.querySelector(`script[data-zone='${zoneId}']`)) return;
             const script = document.createElement('script');
             script.src = `//libtl.com/sdk.js`;
@@ -234,6 +278,9 @@
                 await loadUserData(db); 
                 updateProgress(60);
 
+                // Broadcast Check
+                checkBroadcast(db);
+
                 const referralBoardPromise = db.ref('users').orderByChild('referrals').limitToLast(10).once('value');
                 const earningBoardPromise = db.ref('users').orderByChild('totalEarned').limitToLast(10).once('value');
                 const historyPromise = loadTransactionHistory(db);
@@ -246,7 +293,6 @@
                 leaderboardData.referral.reverse(); leaderboardData.earning.reverse();
                 updateProgress(90);
 
-                // Load config based ad SDK as well (if different)
                 if(appConfig.adZoneId) loadAdSdk(appConfig.adZoneId);
                 
                 earningWalletBalance = parseFloat(localStorage.getItem(`earningWallet_${tgUser.id}`) || '0');
@@ -262,7 +308,23 @@
                         db.ref(`users/${tgUser.id}/welcomed`).set(true);
                     }
                 }, 300);
-            } catch (error) { console.error("Initialization failed:", error); tg.showAlert("অ্যাপ লোড হতে সমস্যা হচ্ছে। আবার চেষ্টা করুন।"); }
+            } catch (error) { console.error("Init error:", error); tg.showAlert("অ্যাপ লোড হতে সমস্যা হচ্ছে।"); }
+        };
+
+        const checkBroadcast = async (db) => {
+            try {
+                const snap = await db.ref('broadcast/current').once('value');
+                const broadcast = snap.val();
+                if (broadcast && broadcast.message) {
+                    const lastSeenId = localStorage.getItem('lastBroadcastId');
+                    if (broadcast.id && String(broadcast.id) !== lastSeenId) {
+                        setTimeout(() => {
+                            showPopup(`<div style="text-align:center;"><i class="fas fa-bullhorn" style="font-size:3rem; color:var(--primary-color); margin-bottom:10px;"></i><h2>নোটিশ</h2><p style="font-size:1.1rem;">${broadcast.message}</p><button class="popup-close-btn">বুঝেছি</button></div>`);
+                            localStorage.setItem('lastBroadcastId', String(broadcast.id));
+                        }, 1000);
+                    }
+                }
+            } catch (e) { console.error(e); }
         };
 
         const loadUserData = async (db) => {
@@ -273,22 +335,14 @@
             if (!userData) {
                 const startParam = tg.initDataUnsafe.start_param;
                 const referralId = (startParam && !isNaN(startParam)) ? startParam : null;
-                
                 userData = { id: tgUser.id, firstName: tgUser.first_name || '', lastName: tgUser.last_name || '', username: tgUser.username || '', photoUrl: tgUser.photo_url || '', balance: 0, referrals: 0, referredBy: referralId, totalEarned: 0, lifetimeAdCount: 0, lastAdWatchDate: '1970-01-01', dailyAdCount: 0, breakUntil: 0, completedTasks: {}, welcomed: false };
                 await userRef.set(userData);
                 
                 if (referralId && referralId != tgUser.id) {
                     const referrerRef = db.ref(`users/${referralId}`);
                     const bonusAmount = parseFloat(appConfig.referralBonus || 0);
-                    
                     if (bonusAmount > 0) {
-                        await referrerRef.transaction(currentData => {
-                            if (currentData) {
-                                currentData.balance = (currentData.balance || 0) + bonusAmount;
-                                currentData.referrals = (currentData.referrals || 0) + 1;
-                            }
-                            return currentData;
-                        });
+                        await referrerRef.transaction(currentData => { if (currentData) { currentData.balance = (currentData.balance || 0) + bonusAmount; currentData.referrals = (currentData.referrals || 0) + 1; } return currentData; });
                     } else {
                         await referrerRef.child('referrals').set(firebase.database.ServerValue.increment(1));
                     }
@@ -296,10 +350,7 @@
             }
             
             const today = new Date().toISOString().slice(0, 10);
-            if (userData.lastAdWatchDate !== today) {
-                userData.dailyAdCount = 0; userData.lastAdWatchDate = today;
-                await userRef.update({ dailyAdCount: 0, lastAdWatchDate: today });
-            }
+            if (userData.lastAdWatchDate !== today) { userData.dailyAdCount = 0; userData.lastAdWatchDate = today; await userRef.update({ dailyAdCount: 0, lastAdWatchDate: today }); }
             userState = userData;
         };
         
@@ -359,48 +410,25 @@
             }
             
             const adFunction = window['show_' + appConfig.adZoneId];
-            if (typeof adFunction !== 'function') {
-                tg.showAlert("অ্যাড নেটওয়ার্ক এখনও প্রস্তুত নয়। একটু পর চেষ্টা করুন।"); return;
-            }
+            if (typeof adFunction !== 'function') { tg.showAlert("অ্যাড নেটওয়ার্ক এখনও প্রস্তুত নয়।"); return; }
 
             showPopup(`<div class="popup-loader"><div class="spinner"></div></div><h2>অ্যাড লোড হচ্ছে</h2><p>অনুগ্রহ করে অপেক্ষা করুন...</p>`);
-            
             try {
-                await adFunction();
-                closePopup();
+                await adFunction(); closePopup();
                 const adValue = appConfig.adValue || 0;
-                
-                earningWalletBalance += adValue;
-                localStorage.setItem(`earningWallet_${tgUser.id}`, earningWalletBalance.toString());
-
-                userState.dailyAdCount++;
-                userState.lifetimeAdCount++;
-                userState.totalEarned = (userState.totalEarned || 0) + adValue;
+                earningWalletBalance += adValue; localStorage.setItem(`earningWallet_${tgUser.id}`, earningWalletBalance.toString());
+                userState.dailyAdCount++; userState.lifetimeAdCount++; userState.totalEarned = (userState.totalEarned || 0) + adValue;
 
                 const db = firebase.database(); const userRef = db.ref(`users/${tgUser.id}`);
-                const updates = {};
-                updates.dailyAdCount = userState.dailyAdCount;
-                updates.lifetimeAdCount = userState.lifetimeAdCount;
-                updates.totalEarned = userState.totalEarned;
+                const updates = { dailyAdCount: userState.dailyAdCount, lifetimeAdCount: userState.lifetimeAdCount, totalEarned: userState.totalEarned };
                 if ((userState.dailyAdCount) % appConfig.adsPerBreak === 0 && appConfig.adsPerBreak > 0) {
-                    updates.breakUntil = Date.now() + (appConfig.breakDuration * 60000);
-                    userState.breakUntil = updates.breakUntil;
+                    updates.breakUntil = Date.now() + (appConfig.breakDuration * 60000); userState.breakUntil = updates.breakUntil;
                 }
                 await userRef.update(updates);
-                
-                const today = new Date().toISOString().slice(0, 10);
-                await db.ref(`userEarnings/${tgUser.id}/${today}`).set(firebase.database.ServerValue.increment(adValue));
+                await db.ref(`userEarnings/${tgUser.id}/${new Date().toISOString().slice(0, 10)}`).set(firebase.database.ServerValue.increment(adValue));
 
-                tg.HapticFeedback.notificationOccurred('success');
-                tg.showAlert(`+${adValue.toFixed(2)} টাকা আর্নিং ওয়ালেটে যোগ হয়েছে।`);
-                
-                renderUI();
-
-            } catch (error) {
-                console.error("Ad failed to load:", error);
-                closePopup();
-                tg.showAlert("অ্যাড লোড করা যায়নি। আবার চেষ্টা করুন।");
-            }
+                tg.HapticFeedback.notificationOccurred('success'); tg.showAlert(`+${adValue.toFixed(2)} টাকা আর্নিং ওয়ালেটে যোগ হয়েছে।`); renderUI();
+            } catch (error) { console.error(error); closePopup(); tg.showAlert("অ্যাড লোড করা যায়নি।"); }
         };
 
         const handleMoveToBalance = async () => {
@@ -409,28 +437,61 @@
             try {
                 const db = firebase.database();
                 await db.ref(`users/${tgUser.id}/balance`).set(firebase.database.ServerValue.increment(earningWalletBalance));
-                userState.balance += earningWalletBalance;
-                earningWalletBalance = 0;
-                localStorage.setItem(`earningWallet_${tgUser.id}`, '0');
-                tg.HapticFeedback.notificationOccurred('success');
-                tg.showAlert("সফলভাবে মূল ব্যালেন্সে নেওয়া হয়েছে!");
-            } catch(error) { console.error("Failed to move balance:", error); tg.showAlert("ব্যালেন্স মুভ করতে সমস্যা হয়েছে।");
-            } finally { btn.textContent = 'মূল ব্যালেন্সে নিন'; renderUI(); }
+                userState.balance += earningWalletBalance; earningWalletBalance = 0; localStorage.setItem(`earningWallet_${tgUser.id}`, '0');
+                tg.HapticFeedback.notificationOccurred('success'); tg.showAlert("সফলভাবে মূল ব্যালেন্সে নেওয়া হয়েছে!");
+            } catch(error) { tg.showAlert("সমস্যা হয়েছে।"); } finally { btn.textContent = 'মূল ব্যালেন্সে নিন'; renderUI(); }
         };
 
         const renderWithdrawalHistory = () => {
             const listEl = document.getElementById('withdrawal-history-list');
             if (userTransactions.length === 0) { listEl.innerHTML = '<p>কোনো পেমেন্ট হিস্ট্রি নেই।</p>'; return; }
             listEl.innerHTML = userTransactions.map(item => `
-                <div class="history-item">
-                    <div class="history-details">
-                        <p>${item.amount.toFixed(2)} টাকা - ${item.method}</p>
-                        <small>${new Date(item.timestamp).toLocaleString()}</small>
-                    </div>
-                    <span class="history-status status-${item.status}">${item.status === 'completed' ? 'সম্পন্ন' : item.status === 'rejected' ? 'বাতিল' : 'পেন্ডিং'}</span>
-                </div>`).join('');
+                <div class="history-item"><div class="history-details"><p>${item.amount.toFixed(2)} টাকা - ${item.method}</p><small>${new Date(item.timestamp).toLocaleString()}</small></div>
+                <span class="history-status status-${item.status}">${item.status === 'completed' ? 'সম্পন্ন' : item.status === 'rejected' ? 'বাতিল' : 'পেন্ডিং'}</span></div>`).join('');
         };
         
+        // --- CHAT SYSTEM ---
+        const initChat = () => {
+            if(chatInitialized) return;
+            const db = firebase.database();
+            const chatRef = db.ref(`support_chats/${tgUser.id}/messages`);
+            const chatBox = document.getElementById('chat-messages');
+            
+            chatRef.limitToLast(50).on('child_added', (snapshot) => {
+                const msg = snapshot.val();
+                const div = document.createElement('div');
+                div.className = `chat-bubble ${msg.sender === 'user' ? 'msg-user' : 'msg-admin'}`;
+                div.textContent = msg.text;
+                chatBox.appendChild(div);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            });
+            chatInitialized = true;
+        };
+
+        const sendChatMessage = () => {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if(!text) return;
+            
+            const db = firebase.database();
+            const timestamp = firebase.database.ServerValue.TIMESTAMP;
+            
+            // Push Message
+            db.ref(`support_chats/${tgUser.id}/messages`).push({
+                sender: 'user', text: text, timestamp: timestamp
+            });
+            
+            // Update Meta for Admin List
+            db.ref(`support_chats/${tgUser.id}/lastMessage`).set({
+                text: text, timestamp: timestamp, read: false,
+                userName: `${userState.firstName} ${userState.lastName}`,
+                userId: tgUser.id,
+                photo: userState.photoUrl
+            });
+            
+            input.value = '';
+        };
+
         const setupNavigation = () => {
             const navButtons = document.querySelectorAll('.nav-btn'); const pages = document.querySelectorAll('.page');
             navButtons.forEach(button => {
@@ -444,6 +505,23 @@
                     if (pageId === 'leaderboard-page') { renderLeaderboard(); }
                 });
             });
+
+            // Button Click Handlers for New Features
+            document.getElementById('open-live-chat-btn').addEventListener('click', () => {
+                pages.forEach(page => page.classList.remove('active'));
+                document.getElementById('chat-page').classList.add('active');
+                initChat();
+            });
+
+            document.getElementById('open-telegram-btn').addEventListener('click', () => {
+                const telegramId = appConfig.adminTelegram || "telegram"; // Fallback
+                // If it's a full URL
+                if(telegramId.startsWith('http')) { tg.openTelegramLink(telegramId); }
+                // If it's a username (without @)
+                else { tg.openTelegramLink(`https://t.me/${telegramId.replace('@','')}`); }
+            });
+
+            document.getElementById('send-chat-btn').addEventListener('click', sendChatMessage);
         };
         
         const setupEventListeners = () => {
@@ -494,9 +572,7 @@
                         userState.balance += task.reward;
                         if (!userState.completedTasks) userState.completedTasks = {};
                         userState.completedTasks[taskId] = true;
-                        tg.HapticFeedback.notificationOccurred('success');
-                        tg.showAlert(`ধন্যবাদ! আপনি ${task.reward} টাকা বোনাস পেয়েছেন।`);
-                        renderUI();
+                        tg.HapticFeedback.notificationOccurred('success'); tg.showAlert(`ধন্যবাদ! আপনি ${task.reward} টাকা বোনাস পেয়েছেন।`); renderUI();
                     } catch (error) { tg.showAlert('বোনাস ক্লেম করতে সমস্যা হয়েছে।'); e.target.disabled = false; e.target.textContent = 'বোনাস নিন'; }
                 }, 5000);
             }
@@ -505,88 +581,42 @@
         const handleWithdraw = async (e) => {
             if(e.target.id !== 'withdraw-form') return;
             e.preventDefault();
-
             const minRefsRequired = appConfig.minimumWithdrawReferrals || 0;
-            const userReferrals = userState.referrals || 0;
-            
-            if (minRefsRequired > 0 && userReferrals < minRefsRequired) {
-                tg.showAlert(`পেমেন্ট নিতে ব্যর্থ। টাকা তুলতে আপনার কমপক্ষে ${minRefsRequired} টি রেফার থাকতে হবে। আপনার আছে ${userReferrals} টি।`);
-                return;
-            }
-
+            if (minRefsRequired > 0 && (userState.referrals || 0) < minRefsRequired) { tg.showAlert(`পেমেন্ট নিতে ব্যর্থ। টাকা তুলতে আপনার কমপক্ষে ${minRefsRequired} টি রেফার থাকতে হবে।`); return; }
             const methodEl = document.getElementById('withdraw-method');
             const accountNumber = document.getElementById('account-number').value;
             const amount = parseFloat(document.getElementById('amount').value);
             const selectedMethod = appConfig.withdrawMethods.find(m => m.name === methodEl.value);
-            
             if (isNaN(amount) || amount <= 0) { tg.showAlert("সঠিক টাকার পরিমাণ দিন।"); return; }
-            if (!selectedMethod) { tg.showAlert("মেথড সঠিক নয়।"); return; }
             if (amount < selectedMethod.min) { tg.showAlert(`${selectedMethod.name}-এ সর্বনিম্ন ${selectedMethod.min} টাকা তোলা যাবে।`); return; }
             if (amount > userState.balance) { tg.showAlert("আপনার পর্যাপ্ত ব্যালেন্স নেই।"); return; }
 
-            // ============================================
-            // নতুন কোড শুরু: পেমেন্ট রিকোয়েস্টের আগে অ্যাড দেখানো
-            // ============================================
             const withdrawAdZone = '10207269';
             if (typeof window['show_' + withdrawAdZone] === 'function') {
                 showPopup(`<div class="popup-loader"><div class="spinner"></div></div><h2>প্রসেসিং...</h2><p>টাকা তোলার জন্য বিজ্ঞাপনটি সম্পূর্ণ দেখুন...</p>`);
-                try {
-                    await window['show_' + withdrawAdZone]();
-                    // অ্যাড সফলভাবে দেখার পর পপআপ বন্ধ হবে
-                    closePopup();
-                } catch (adError) {
-                    console.error("Ad failed or skipped:", adError);
-                    closePopup();
-                    // অ্যাড ফেইল করলেও প্রসেস চালিয়ে যাবে, যাতে ইউজার আটকে না যায়।
-                }
+                try { await window['show_' + withdrawAdZone](); closePopup(); } catch (adError) { console.error(adError); closePopup(); }
             }
-            // ============================================
-            // নতুন কোড শেষ
-            // ============================================
             
             const btn = document.getElementById('withdraw-submit-btn'); btn.disabled = true; btn.textContent = 'সাবমিট হচ্ছে...';
             const db = firebase.database();
             try {
                 const userRef = db.ref(`users/${tgUser.id}`);
-                userState.balance -= amount;
-                renderUI(); 
-                
+                userState.balance -= amount; renderUI(); 
                 await userRef.child('balance').set(firebase.database.ServerValue.increment(-amount));
                 const reqId = db.ref('withdrawals/pending').push().key;
                 const newRequest = { id: reqId, userId: tgUser.id, userName: `${userState.firstName} ${userState.lastName}`, method: selectedMethod.name, account: accountNumber, amount: amount, status: 'pending', timestamp: firebase.database.ServerValue.TIMESTAMP };
                 await db.ref(`withdrawals/pending/${reqId}`).set(newRequest);
-                
-                userTransactions.unshift(newRequest);
-                renderWithdrawalHistory(); 
-
-                tg.HapticFeedback.notificationOccurred('success');
-                tg.showAlert("উত্তোলন রিকুয়েস্ট সফলভাবে জমা হয়েছে!");
-                document.getElementById('withdraw-form').reset();
-            } catch (error) {
-                userState.balance += amount;
-                tg.HapticFeedback.notificationOccurred('error'); 
-                tg.showAlert("রিকুয়েস্ট ব্যর্থ হয়েছে। ব্যালেন্স ফেরত দেওয়া হয়েছে।");
-            } finally {
-                renderUI();
-                btn.disabled = false;
-                btn.textContent = 'টাকা তুলুন';
-            }
+                userTransactions.unshift(newRequest); renderWithdrawalHistory(); 
+                tg.HapticFeedback.notificationOccurred('success'); tg.showAlert("উত্তোলন রিকুয়েস্ট সফলভাবে জমা হয়েছে!"); document.getElementById('withdraw-form').reset();
+            } catch (error) { userState.balance += amount; tg.HapticFeedback.notificationOccurred('error'); tg.showAlert("রিকুয়েস্ট ব্যর্থ হয়েছে।"); } 
+            finally { renderUI(); btn.disabled = false; btn.textContent = 'টাকা তুলুন'; }
         };
 
         const copyReferralLink = () => {
             const refLinkInput = document.getElementById('referral-link');
-            refLinkInput.select();
-            refLinkInput.setSelectionRange(0, 99999);
-            try {
-                navigator.clipboard.writeText(refLinkInput.value).then(() => {
-                    tg.HapticFeedback.notificationOccurred('success');
-                    tg.showAlert("রেফার লিংক কপি হয়েছে!");
-                });
-            } catch (err) {
-                document.execCommand('copy');
-                tg.HapticFeedback.notificationOccurred('success');
-                tg.showAlert("রেফার লিংক কপি হয়েছে!");
-            }
+            refLinkInput.select(); refLinkInput.setSelectionRange(0, 99999);
+            try { navigator.clipboard.writeText(refLinkInput.value).then(() => { tg.HapticFeedback.notificationOccurred('success'); tg.showAlert("রেফার লিংক কপি হয়েছে!"); }); } 
+            catch (err) { document.execCommand('copy'); tg.HapticFeedback.notificationOccurred('success'); tg.showAlert("রেফার লিংক কপি হয়েছে!"); }
         };
 
         const renderLeaderboard = () => {
@@ -628,47 +658,17 @@
 
         const renderWithdrawSection = () => {
             const container = document.getElementById('withdraw-section'); let optionsHtml = '';
-            if (appConfig.withdrawMethods) { appConfig.withdrawMethods.forEach(method => { 
-                optionsHtml += `<option value="${method.name}">${method.name} (মিন: ${method.min} টাকা)</option>`; 
-            }); }
-            
+            if (appConfig.withdrawMethods) { appConfig.withdrawMethods.forEach(method => { optionsHtml += `<option value="${method.name}">${method.name} (মিন: ${method.min} টাকা)</option>`; }); }
             const minRefs = appConfig.minimumWithdrawReferrals || 0;
-            let referralNotice = '';
-            if (minRefs > 0) {
-                referralNotice = `<p style="font-size: 0.85rem; text-align: center; margin-bottom: 15px; opacity: 0.8; color: var(--danger);"><b>নোট:</b> টাকা তুলতে হলে আপনার কমপক্ষে <b>${minRefs} টি রেফার</b> থাকতে হবে।</p>`;
-            }
-
-            container.innerHTML = `
-            <form id="withdraw-form" class="task-container" style="flex-direction: column; align-items: stretch;">
-                <h3>টাকা উত্তোলন করুন</h3>
-                ${referralNotice}
-                <div class="form-group" style="width:100%">
-                    <label for="withdraw-method">পেমেন্ট মেথড:</label>
-                    <select id="withdraw-method" required style="width: 100%; padding: 10px; border-radius: 8px;">${optionsHtml}</select>
-                </div>
-                <div class="form-group" style="width:100%">
-                    <label for="account-number">অ্যাকাউন্ট নম্বর:</label>
-                    <input type="text" id="account-number" placeholder="আপনার নম্বর দিন" required style="width: 100%; padding: 10px; border-radius: 8px;">
-                </div>
-                <div class="form-group" style="width:100%">
-                    <label for="amount">টাকার পরিমাণ:</label>
-                    <input type="number" step="any" id="amount" placeholder="কত টাকা তুলতে চান?" required style="width: 100%; padding: 10px; border-radius: 8px;">
-                </div>
-                <button type="submit" id="withdraw-submit-btn" class="action-btn">টাকা তুলুন</button>
-            </form>`;
+            let referralNotice = minRefs > 0 ? `<p style="font-size: 0.85rem; text-align: center; margin-bottom: 15px; opacity: 0.8; color: var(--danger);"><b>নোট:</b> টাকা তুলতে হলে আপনার কমপক্ষে <b>${minRefs} টি রেফার</b> থাকতে হবে।</p>` : '';
+            container.innerHTML = `<form id="withdraw-form" class="task-container" style="flex-direction: column; align-items: stretch;"><h3>টাকা উত্তোলন করুন</h3>${referralNotice}<div class="form-group" style="width:100%"><label for="withdraw-method">পেমেন্ট মেথড:</label><select id="withdraw-method" required style="width: 100%; padding: 10px; border-radius: 8px;">${optionsHtml}</select></div><div class="form-group" style="width:100%"><label for="account-number">অ্যাকাউন্ট নম্বর:</label><input type="text" id="account-number" placeholder="আপনার নম্বর দিন" required style="width: 100%; padding: 10px; border-radius: 8px;"></div><div class="form-group" style="width:100%"><label for="amount">টাকার পরিমাণ:</label><input type="number" step="any" id="amount" placeholder="কত টাকা তুলতে চান?" required style="width: 100%; padding: 10px; border-radius: 8px;"></div><button type="submit" id="withdraw-submit-btn" class="action-btn">টাকা তুলুন</button></form>`;
         };
 
         const renderDynamicLinks = () => {
             const container = document.getElementById('dynamic-links-container'); container.innerHTML = '';
             if (appConfig.links) {
-                const links = [];
-                for (const key in appConfig.links) { links.push({key, ...appConfig.links[key]}); }
-                links.reverse();
-                links.forEach(link => {
-                    const el = document.createElement('div'); el.className = 'task-container';
-                    el.innerHTML = `<img class="task-icon-img" src="${link.icon}" alt="icon"><div class="task-info"><h3>${link.name}</h3></div><button class="action-btn" onclick="window.Telegram.WebApp.openLink('${link.url}')">ভিজিট করুন</button>`;
-                    container.appendChild(el);
-                });
+                const links = []; for (const key in appConfig.links) { links.push({key, ...appConfig.links[key]}); } links.reverse();
+                links.forEach(link => { const el = document.createElement('div'); el.className = 'task-container'; el.innerHTML = `<img class="task-icon-img" src="${link.icon}" alt="icon"><div class="task-info"><h3>${link.name}</h3></div><button class="action-btn" onclick="window.Telegram.WebApp.openLink('${link.url}')">ভিজিট করুন</button>`; container.appendChild(el); });
             }
         };
 
