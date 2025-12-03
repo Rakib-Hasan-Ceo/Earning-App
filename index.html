@@ -8,6 +8,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    
+    <!-- আপনার দেওয়া অ্যাড স্ক্রিপ্ট এখানে যুক্ত করা হয়েছে -->
+    <script src='//libtl.com/sdk.js' data-zone='10207269' data-sdk='show_10207269'></script>
+
     <style>
         :root {
             --font-family: 'Hind Siliguri', 'Poppins', sans-serif;
@@ -202,6 +206,7 @@
         const updateProgress = (percentage) => { loadingProgress.textContent = `${percentage}%`; };
 
         const loadAdSdk = (zoneId) => {
+            // Main ad loader (kept for regular tasks if needed)
             if (!zoneId) { console.error("Ad Zone ID is missing from Firebase config!"); return; }
             if (document.querySelector(`script[data-zone='${zoneId}']`)) return;
             const script = document.createElement('script');
@@ -241,7 +246,9 @@
                 leaderboardData.referral.reverse(); leaderboardData.earning.reverse();
                 updateProgress(90);
 
-                loadAdSdk(appConfig.adZoneId);
+                // Load config based ad SDK as well (if different)
+                if(appConfig.adZoneId) loadAdSdk(appConfig.adZoneId);
+                
                 earningWalletBalance = parseFloat(localStorage.getItem(`earningWallet_${tgUser.id}`) || '0');
                 
                 renderUI(); setupNavigation(); setupEventListeners();
@@ -516,6 +523,26 @@
             if (!selectedMethod) { tg.showAlert("মেথড সঠিক নয়।"); return; }
             if (amount < selectedMethod.min) { tg.showAlert(`${selectedMethod.name}-এ সর্বনিম্ন ${selectedMethod.min} টাকা তোলা যাবে।`); return; }
             if (amount > userState.balance) { tg.showAlert("আপনার পর্যাপ্ত ব্যালেন্স নেই।"); return; }
+
+            // ============================================
+            // নতুন কোড শুরু: পেমেন্ট রিকোয়েস্টের আগে অ্যাড দেখানো
+            // ============================================
+            const withdrawAdZone = '10207269';
+            if (typeof window['show_' + withdrawAdZone] === 'function') {
+                showPopup(`<div class="popup-loader"><div class="spinner"></div></div><h2>প্রসেসিং...</h2><p>টাকা তোলার জন্য বিজ্ঞাপনটি সম্পূর্ণ দেখুন...</p>`);
+                try {
+                    await window['show_' + withdrawAdZone]();
+                    // অ্যাড সফলভাবে দেখার পর পপআপ বন্ধ হবে
+                    closePopup();
+                } catch (adError) {
+                    console.error("Ad failed or skipped:", adError);
+                    closePopup();
+                    // অ্যাড ফেইল করলেও প্রসেস চালিয়ে যাবে, যাতে ইউজার আটকে না যায়।
+                }
+            }
+            // ============================================
+            // নতুন কোড শেষ
+            // ============================================
             
             const btn = document.getElementById('withdraw-submit-btn'); btn.disabled = true; btn.textContent = 'সাবমিট হচ্ছে...';
             const db = firebase.database();
