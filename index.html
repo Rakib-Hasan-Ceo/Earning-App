@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
     
+    <!-- Ad Script -->
     <script src='//libtl.com/sdk.js' data-zone='10207269' data-sdk='show_10207269'></script>
 
     <style>
@@ -226,15 +227,16 @@
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         const tg = window.Telegram.WebApp;
+        // আপনার Firebase Config (এটি যেন সঠিক থাকে)
         const firebaseConfig = {
-  apiKey: "AIzaSyAQ0tdDDVHU64ZNaw-b9GqgGhDkof0z5dg",
-  authDomain: "cash-hub-88d9a.firebaseapp.com",
-  databaseURL: "https://cash-hub-88d9a-default-rtdb.firebaseio.com",
-  projectId: "cash-hub-88d9a",
-  storageBucket: "cash-hub-88d9a.firebasestorage.app",
-  messagingSenderId: "784815449124",
-  appId: "1:784815449124:web:3507f2f89bd30cd6d864b1"
-};
+          apiKey: "AIzaSyAQ0tdDDVHU64ZNaw-b9GqgGhDkof0z5dg",
+          authDomain: "cash-hub-88d9a.firebaseapp.com",
+          databaseURL: "https://cash-hub-88d9a-default-rtdb.firebaseio.com",
+          projectId: "cash-hub-88d9a",
+          storageBucket: "cash-hub-88d9a.firebasestorage.app",
+          messagingSenderId: "784815449124",
+          appId: "1:784815449124:web:3507f2f89bd30cd6d864b1"
+        };
         
         let appConfig = {}; let userState = {}; let tgUser = {}; let earningWalletBalance = 0;
         let leaderboardData = { referral: [], earning: [] };
@@ -264,24 +266,32 @@
             tg.ready(); tg.expand();
             document.body.className = `${tg.colorScheme}-theme`;
             tgUser = tg.initDataUnsafe.user;
-            if (!tgUser || !tgUser.id) { tg.showAlert("User data not found.", () => tg.close()); return; }
+            // টেস্টিং এর জন্য যদি টেলিগ্রামের বাইরে থাকেন, এই চেকটি এরর দিতে পারে।
+            if (!tgUser || !tgUser.id) { 
+                tg.showAlert("User data not found. Open via Telegram.", () => tg.close()); 
+                // for local testing uncomment below line and comment above line
+                // tgUser = { id: 123456, first_name: "Test", last_name: "User", username: "tester", photo_url: "" };
+                return; 
+            }
 
             try {
-                updateProgress(10); firebase.initializeApp(firebaseConfig); const db = firebase.database();
+                updateProgress(10); 
+                firebase.initializeApp(firebaseConfig); 
+                const db = firebase.database();
                 updateProgress(20);
                 
-                const configSnapshot = await db.ref('config').once('value');
-                appConfig = configSnapshot.val() || {};
+                // Load Config safely
+                try {
+                    const configSnapshot = await db.ref('config').once('value');
+                    appConfig = configSnapshot.val() || {};
+                } catch(e) { appConfig = {}; console.error("Config load error", e); }
+                
                 updateProgress(40);
 
                 await loadUserData(db); 
                 updateProgress(60);
 
-                // Broadcast Check
-                checkBroadcast(db);
-                // Check Unread Messages for Badge
-                checkUnreadMessages(db);
-
+                // Load Data concurrently
                 const referralBoardPromise = db.ref('users').orderByChild('referrals').limitToLast(10).once('value');
                 const earningBoardPromise = db.ref('users').orderByChild('totalEarned').limitToLast(10).once('value');
                 const historyPromise = loadTransactionHistory(db);
@@ -298,10 +308,14 @@
                 
                 earningWalletBalance = parseFloat(localStorage.getItem(`earningWallet_${tgUser.id}`) || '0');
                 
-                renderUI(); setupNavigation(); setupEventListeners();
+                // Render UI First so user sees something even if listeners fail
+                renderUI(); 
+                setupNavigation(); 
+                setupEventListeners();
                 
-                // ---- SETUP NOTIFICATION LISTENER ---
-                setupNotificationListener(db);
+                // Safe Listeners (won't crash app if DB rules are wrong)
+                try { checkBroadcast(db); } catch(e){}
+                try { setupNotificationListener(db); } catch(e){}
 
                 updateProgress(100);
 
@@ -313,23 +327,25 @@
                         db.ref(`users/${tgUser.id}/welcomed`).set(true);
                     }
                 }, 300);
-            } catch (error) { console.error("Init error:", error); tg.showAlert("অ্যাপ লোড হতে সমস্যা হচ্ছে।"); }
+            } catch (error) { 
+                console.error("Init fatal error:", error); 
+                // Show real error for debugging
+                alert("Error: " + error.message);
+            }
         };
 
         const checkBroadcast = async (db) => {
-            try {
-                const snap = await db.ref('broadcast/current').once('value');
-                const broadcast = snap.val();
-                if (broadcast && broadcast.message) {
-                    const lastSeenId = localStorage.getItem('lastBroadcastId');
-                    if (broadcast.id && String(broadcast.id) !== lastSeenId) {
-                        setTimeout(() => {
-                            showPopup(`<div style="text-align:center;"><i class="fas fa-bullhorn" style="font-size:3rem; color:var(--primary-color); margin-bottom:10px;"></i><h2>নোটিশ</h2><p style="font-size:1.1rem;">${broadcast.message}</p><button class="popup-close-btn">বুঝেছি</button></div>`);
-                            localStorage.setItem('lastBroadcastId', String(broadcast.id));
-                        }, 1000);
-                    }
+            const snap = await db.ref('broadcast/current').once('value');
+            const broadcast = snap.val();
+            if (broadcast && broadcast.message) {
+                const lastSeenId = localStorage.getItem('lastBroadcastId');
+                if (broadcast.id && String(broadcast.id) !== lastSeenId) {
+                    setTimeout(() => {
+                        showPopup(`<div style="text-align:center;"><i class="fas fa-bullhorn" style="font-size:3rem; color:var(--primary-color); margin-bottom:10px;"></i><h2>নোটিশ</h2><p style="font-size:1.1rem;">${broadcast.message}</p><button class="popup-close-btn">বুঝেছি</button></div>`);
+                        localStorage.setItem('lastBroadcastId', String(broadcast.id));
+                    }, 1000);
                 }
-            } catch (e) { console.error(e); }
+            }
         };
 
         const loadUserData = async (db) => {
